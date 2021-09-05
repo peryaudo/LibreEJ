@@ -95,7 +95,7 @@ def not_too_long(contour):
     x, y, w, h = cv2.boundingRect(contour)
     return w < 100 and h < 100
 
-def detect_heading(original_column):
+def detect_article(original_column):
     column = cv2.cvtColor(original_column, cv2.COLOR_BGR2GRAY)
     ret, column = cv2.threshold(column, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     contours, hierarchy = cv2.findContours(image=column, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
@@ -130,7 +130,7 @@ def get_articles_from_spread(spread):
         page = crop_page_margin(deskew(page))
         left_column, right_column = split_column(page)
         for column in [left_column, right_column]:
-            heading_ys = detect_heading(column)
+            heading_ys = detect_article(column)
             articles = cut_into_articles(column, heading_ys)
             for article in articles:
                 result.append(article)
