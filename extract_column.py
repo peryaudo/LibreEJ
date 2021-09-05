@@ -122,20 +122,22 @@ def recognize_heading(article):
     recognized = pytesseract.image_to_string(article, lang="eng")
     return re.split('[\\[\\|]', recognized)[0].strip()
 
+def get_articles_from_spread(spread):
+    cropped = crop_from_book(spread)
+    left_page, right_page = split_left_and_right(cropped)
+    result = []
+    for page in [left_page, right_page]:
+        page = crop_page_margin(deskew(page))
+        left_column, right_column = split_column(page)
+        for column in [left_column, right_column]:
+            heading_ys = detect_heading(column)
+            articles = cut_into_articles(column, heading_ys)
+            for article in articles:
+                result.append((recognize_heading(article), article))
+    return result
+
 img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
-cropped = crop_from_book(img)
-left_page, right_page = split_left_and_right(cropped)
-page = deskew(left_page)
-page = crop_page_margin(page)
 
-left_column, right_column = split_column(page)
-
-heading_ys = detect_heading(right_column)
-articles = cut_into_articles(right_column, heading_ys)
-
-for article in articles:
-    print(recognize_heading(article))
-# cv2.imshow("image", right_column)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
+for (heading, article) in get_articles_from_spread(img):
+    print(heading)
