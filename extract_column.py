@@ -1,6 +1,7 @@
 import cv2
 import imutils
 import numpy as np
+import re
 from pytesseract import pytesseract
 
 np.set_printoptions(threshold=np.inf)
@@ -58,7 +59,6 @@ def deskew(original_page):
             best_score = score
             best_angle = angle
         angle += 0.01
-    print("best_angle = ", best_angle)
     return imutils.rotate(original_page, best_angle)
 
 def crop_page_margin(page):
@@ -116,7 +116,14 @@ def cut_into_articles(column, ys):
         prev_y = y
     return articles
 
+def recognize_heading(article):
+    article = cv2.cvtColor(article, cv2.COLOR_BGR2GRAY)
+    article = cv2.resize(article, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    recognized = pytesseract.image_to_string(article, lang="eng")
+    return re.split('[\\[\\|]', recognized)[0].strip()
+
 img = cv2.imread("images/page-015.jpg")
+# img = cv2.imread("jpegOutput.jpg")
 cropped = crop_from_book(img)
 left_page, right_page = split_left_and_right(cropped)
 page = deskew(left_page)
@@ -127,8 +134,8 @@ left_column, right_column = split_column(page)
 heading_ys = detect_heading(right_column)
 articles = cut_into_articles(right_column, heading_ys)
 
-# print(pytesseract.image_to_string(right_column, lang="eng"))
 for article in articles:
-    cv2.imshow("image", article)
-    cv2.waitKey(0)
-cv2.destroyAllWindows()
+    print(recognize_heading(article))
+# cv2.imshow("image", right_column)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
