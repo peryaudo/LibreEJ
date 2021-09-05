@@ -103,7 +103,9 @@ def detect_article(original_column):
     contours = filter(not_too_long, contours)
     contours = sorted(contours, key=leftmost_contour)
     heading_x = cv2.boundingRect(contours[0])[0]
+    # TODO: Stop using heuristic heading tabbing threshold of 5
     contours = filter(lambda contour: abs(cv2.boundingRect(contour)[0] - heading_x) < 5, contours)
+    # TODO: Stop subtracting 5 and use a smarter method
     heading_ys = map(lambda contour: cv2.boundingRect(contour)[1] - 5, contours)
     return list(sorted(list(set(heading_ys))))
 
@@ -111,6 +113,7 @@ def cut_into_articles(column, ys):
     articles = []
     h, w = column.shape[:2]
     prev_y = ys[0]
+    # TODO: Stop dropping ys[0] and concatenate it with an article in the previous column
     for y in ys[1:] + [h]:
         articles.append(column[prev_y:y,:])
         prev_y = y
