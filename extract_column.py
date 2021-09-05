@@ -133,13 +133,12 @@ def get_articles_from_spread(spread):
             heading_ys = detect_heading(column)
             articles = cut_into_articles(column, heading_ys)
             for article in articles:
-                result.append((recognize_heading(article), article))
+                result.append(article)
     return result
 
 img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
 
-for (heading, article) in get_articles_from_spread(img):
-    print(heading)
+for article in get_articles_from_spread(img):
     cv2.imshow('image', article)
     cv2.waitKey(0)
