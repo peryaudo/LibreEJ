@@ -105,7 +105,7 @@ def detect_heading(original_column):
     heading_x = cv2.boundingRect(contours[0])[0]
     contours = filter(lambda contour: abs(cv2.boundingRect(contour)[0] - heading_x) < 5, contours)
     heading_ys = map(lambda contour: cv2.boundingRect(contour)[1] - 5, contours)
-    return list(sorted(heading_ys))
+    return list(sorted(list(set(heading_ys))))
 
 def cut_into_articles(column, ys):
     articles = []
@@ -141,3 +141,5 @@ img = cv2.imread("images/page-015.jpg")
 
 for (heading, article) in get_articles_from_spread(img):
     print(heading)
+    cv2.imshow('image', article)
+    cv2.waitKey(0)
