@@ -142,10 +142,20 @@ def get_articles_from_spread(spread):
                 result.append(article)
     return result
 
-img = cv2.imread("images/page-015.jpg")
+# TODO: p. 11 and p. 1225 are shorter irregular pages
+page_range = range(12, 1225)
+
+for page_idx in page_range:
+    src_filename = 'images/page-%03d.jpg' % page_idx
+    dst_filename = 'cropped/crop-%03d.jpg' % page_idx
+    src = cv2.imread(src_filename)
+    dst = crop_from_book(src)
+    cv2.imwrite(dst_filename, dst)
+
+# img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
 
-for article in get_articles_from_spread(img):
-    print(recognize_heading(article))
-    # cv2.imshow('image', article)
-    # cv2.waitKey(0)
+# for article in get_articles_from_spread(img):
+#     print(recognize_heading(article))
+#     cv2.imshow('image', article)
+#     cv2.waitKey(0)
