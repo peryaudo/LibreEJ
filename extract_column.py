@@ -122,8 +122,11 @@ def cut_into_articles(column, ys):
 def recognize_heading(article):
     article = cv2.cvtColor(article, cv2.COLOR_BGR2GRAY)
     article = cv2.resize(article, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-    recognized = pytesseract.image_to_string(article, lang="eng")
-    return re.split('[\\[\\|]', recognized)[0].strip()
+    data = pytesseract.image_to_data(article, lang="eng", output_type=pytesseract.Output.DICT)
+    for text in data['text']:
+        if len(text) > 0:
+            return text.split('[')[0]
+    return None
 
 def get_articles_from_spread(spread):
     cropped = crop_from_book(spread)
@@ -143,5 +146,6 @@ img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
 
 for article in get_articles_from_spread(img):
-    cv2.imshow('image', article)
-    cv2.waitKey(0)
+    print(recognize_heading(article))
+    # cv2.imshow('image', article)
+    # cv2.waitKey(0)
