@@ -151,6 +151,17 @@ def crop_from_book2(img):
     hsv_upper = np.array([20, 255, 255])
     hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
     x, y, w, h = cv2.boundingRect(hsv_mask)
+
+    # hsv = hsv[y:y+h,x:x+w]
+    # hsv_lower = np.array([0, 0, 0])
+    # hsv_upper = np.array([179, 50, 150])
+    # hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
+
+    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    # hsv_mask = cv2.dilate(hsv_mask, kernel, iterations = 4)
+
+    # cv2.imshow('image', hsv_mask)
+    # cv2.waitKey(0)
     return img[y:y+h,x:x+w]
 
 for page_idx in page_range:
