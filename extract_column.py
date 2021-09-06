@@ -149,7 +149,10 @@ for page_idx in page_range:
     src_filename = 'images/page-%03d.jpg' % page_idx
     dst_filename = 'cropped/crop-%03d.jpg' % page_idx
     src = cv2.imread(src_filename)
-    dst = crop_from_book(src)
+    try:
+        dst = crop_from_book(src)
+    except Exception as e:
+        print('error while processing', src_filename, e)
     cv2.imwrite(dst_filename, dst)
 
 # img = cv2.imread("images/page-015.jpg")
