@@ -145,12 +145,20 @@ def get_articles_from_spread(spread):
 # TODO: p. 11 and p. 1225 are shorter irregular pages
 page_range = range(12, 1225)
 
+def crop_from_book2(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hsv_lower = np.array([15, 0, 230])
+    hsv_upper = np.array([20, 255, 255])
+    hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
+    x, y, w, h = cv2.boundingRect(hsv_mask)
+    return img[y:y+h,x:x+w]
+
 for page_idx in page_range:
     src_filename = 'images/page-%03d.jpg' % page_idx
     dst_filename = 'cropped/crop-%03d.jpg' % page_idx
     src = cv2.imread(src_filename)
     try:
-        dst = crop_from_book(src)
+        dst = crop_from_book2(src)
     except Exception as e:
         print('error while processing', src_filename, e)
     cv2.imwrite(dst_filename, dst)
