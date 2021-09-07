@@ -151,18 +151,28 @@ def crop_from_book2(img):
     hsv_upper = np.array([20, 255, 255])
     hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
     x, y, w, h = cv2.boundingRect(hsv_mask)
+    img = img[y:y+h,x:x+w]
+    hsv = hsv[y:y+h,x:x+w]
 
-    # hsv = hsv[y:y+h,x:x+w]
-    # hsv_lower = np.array([0, 0, 0])
-    # hsv_upper = np.array([179, 50, 150])
-    # hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
+    hsv_lower = np.array([0, 0, 0])
+    hsv_upper = np.array([179, 80, 150])
+    hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
 
-    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
-    # hsv_mask = cv2.dilate(hsv_mask, kernel, iterations = 4)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    hsv_mask = cv2.dilate(hsv_mask, kernel, iterations = 4)
+    contours, hierarchy = cv2.findContours(image=hsv_mask, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
 
-    # cv2.imshow('image', hsv_mask)
-    # cv2.waitKey(0)
-    return img[y:y+h,x:x+w]
+    boxes = []
+    area_threshold = 0.2
+    for contour in contours:
+        cx, cy, cw, ch = cv2.boundingRect(contour)
+        if cw * ch > (w * h * area_threshold):
+            boxes.append([cx, cy, cx + cw, cy + ch])
+    boxes = np.asarray(boxes)
+    left, top = np.min(boxes, axis=0)[:2]
+    right, bottom = np.max(boxes, axis=0)[2:]
+
+    return img[top:bottom,left:right]
 
 for page_idx in page_range:
     src_filename = 'images/page-%03d.jpg' % page_idx
