@@ -113,7 +113,8 @@ def detect_article(column):
     heading_ys = map(lambda contour: cv2.boundingRect(contour)[1] - 5, contours)
     return list(sorted(list(set(heading_ys))))
 
-def cut_into_articles(column, ys):
+def cut_into_articles(column):
+    ys = detect_article(column)
     articles = []
     h, w = column.shape[:2]
     prev_y = ys[0]
@@ -140,8 +141,7 @@ def get_articles_from_spread(spread):
         page = deskew(to_grayscale(crop_page_margin(page)))
         left_column, right_column = split_column(page)
         for column in [left_column, right_column]:
-            heading_ys = detect_article(column)
-            articles = cut_into_articles(column, heading_ys)
+            articles = cut_into_articles(column)
             for article in articles:
                 result.append(article)
     return result
