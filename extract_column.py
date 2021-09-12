@@ -157,6 +157,8 @@ def draw_lines(column):
     return column
 
 def recognize_heading(article):
+    # https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html#Borders
+    article = cv2.copyMakeBorder(article, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=(0,0,0))
     article = cv2.bitwise_not(article)
     article = cv2.resize(article, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     data = pytesseract.image_to_data(article, lang="eng", output_type=pytesseract.Output.DICT)
