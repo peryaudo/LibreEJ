@@ -58,8 +58,7 @@ def split_left_and_right(cropped):
     return left_page, right_page
 
 def deskew(original_page):
-    page = cv2.cvtColor(original_page, cv2.COLOR_BGR2GRAY)
-    ret, page = cv2.threshold(page, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    ret, page = cv2.threshold(original_page, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     page = fill_from_corners(page)
     angle = -1.5
     best_angle = angle
@@ -167,6 +166,11 @@ def get_articles_from_spread(spread):
                 result.append(article)
     return result
 
+def to_grayscale(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hsv = cv2.bitwise_not(hsv[...,2])
+    return hsv
+
 # TODO: p. 11 and p. 1225 are shorter irregular pages
 page_range = range(12, 1225)
 
@@ -177,10 +181,19 @@ def test_page_split(page_idx):
         dst_left, dst_right = split_left_and_right(dst)
         dst_left = crop_page_margin2(dst_left)
         dst_right = crop_page_margin2(dst_right)
+        dst_left = to_grayscale(dst_left)
+        dst_right = to_grayscale(dst_right)
+        dst_left = deskew(dst_left)
+        dst_right = deskew(dst_right)
+
+        dst_left_1, dst_left_2 = split_column(dst_left)
+        dst_right_1, dst_right_2 = split_column(dst_right)
     except Exception as e:
         print('error while processing', page_idx, e)
-    cv2.imwrite(('cropped/crop-%03d-left.jpg' % page_idx), dst_left)
-    cv2.imwrite(('cropped/crop-%03d-right.jpg' % page_idx), dst_right)
+    cv2.imwrite(('cropped/crop-%03d-left-1.jpg' % page_idx), dst_left_1)
+    cv2.imwrite(('cropped/crop-%03d-left-2.jpg' % page_idx), dst_left_2)
+    cv2.imwrite(('cropped/crop-%03d-right-1.jpg' % page_idx), dst_right_1)
+    cv2.imwrite(('cropped/crop-%03d-right-2.jpg' % page_idx), dst_right_2)
 
 # pool = multiprocessing.Pool()
 # pool.map(test_page_split, page_range)
