@@ -115,7 +115,7 @@ def detect_article(column):
     return list(sorted(list(set(heading_ys))))
 
 def cut_into_articles(column):
-    ys = detect_article(column)
+    ys = detect_articles2(column)
     articles = []
     h, w = column.shape[:2]
     prev_y = ys[0]
@@ -136,6 +136,28 @@ def detect_lines(column):
     lower = [lower[i] for i in range(len(lower) - 1) if lower[i + 1] - lower[i] > m // 2]
     upper = [upper[i] for i in range(len(upper) - 1) if upper[i + 1] - upper[i] > m // 2]
     return lower, upper
+
+def detect_articles2(original_column):
+    lower, upper = detect_lines(original_column)
+    ret, column = cv2.threshold(original_column, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    h, w = column.shape[:2]
+    bxs = []
+    for upper_y in upper:
+        lower_y = min(filter(lambda y: y > upper_y, lower), default=-1)
+        if lower_y < 0:
+            break
+        bx, by, bw, bh = cv2.boundingRect(column[upper_y:lower_y, :])
+        bxs.append(bx)
+    print(bxs)
+    th = (max(bxs) - min(bxs)) // 2
+    print(th)
+    heading_ys = []
+    for i in range(len(bxs)):
+        if bxs[i] < th:
+            upper_y = upper[i]
+            lower_y = max(filter(lambda y: y < upper_y, lower), default=upper_y)
+            heading_ys.append((lower_y + upper_y) // 2)
+    return heading_ys
 
 def draw_lines(column):
     lower, upper = detect_lines(column)
@@ -205,13 +227,13 @@ def test_page_split(page_idx):
 
 # pool = multiprocessing.Pool()
 # pool.map(test_page_split, page_range)
-for page_idx in range(12, 50):
-    test_page_split(page_idx)
+# for page_idx in range(12, 50):
+#     test_page_split(page_idx)
 
-# img = cv2.imread("images/page-015.jpg")
+img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
 
-# for article in get_articles_from_spread(img):
-#     print(recognize_heading(article))
-#     cv2.imshow('image', article)
-#     cv2.waitKey(0)
+for article in get_articles_from_spread(img):
+    print(recognize_heading(article))
+    cv2.imshow('image', article)
+    cv2.waitKey(0)
