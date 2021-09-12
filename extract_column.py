@@ -16,26 +16,38 @@ def fill_from_corners(gray):
     return gray
 
 def crop_from_book(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    ret, gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    h, w = gray.shape[:2]
-    gray = fill_from_corners(gray)
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hsv_lower = np.array([15, 0, 230])
+    hsv_upper = np.array([20, 255, 255])
+    hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    hsv_mask = cv2.morphologyEx(hsv_mask, cv2.MORPH_OPEN, kernel, iterations=4)
 
-    book_threshold = 145
+    x, y, w, h = cv2.boundingRect(hsv_mask)
+    img = img[y:y+h,x:x+w]
+    hsv = hsv[y:y+h,x:x+w]
 
-    vertical = np.sum(gray, axis=0)//w > book_threshold
-    horizontal = np.sum(gray, axis=1)//h > book_threshold
+    hsv_lower = np.array([0, 0, 0])
+    hsv_upper = np.array([179, 80, 150])
+    hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
 
-    vertical_indexes = np.where(vertical == True)
-    horizontal_indexes = np.where(horizontal == True)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    hsv_mask = cv2.dilate(hsv_mask, kernel, iterations = 4)
+    contours, hierarchy = cv2.findContours(image=hsv_mask, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
 
-    v_begin = vertical_indexes[0][0]
-    v_end = vertical_indexes[0][-1]
+    # For debug
+    # cv2.drawContours(img, contours, -1, (0, 255, 0), 3)
+    boxes = []
+    area_threshold = 0.1
+    for contour in contours:
+        cx, cy, cw, ch = cv2.boundingRect(contour)
+        if cw * ch > (w * h * area_threshold):
+            boxes.append([cx, cy, cx + cw, cy + ch])
+    boxes = np.asarray(boxes)
+    left, top = np.min(boxes, axis=0)[:2]
+    right, bottom = np.max(boxes, axis=0)[2:]
 
-    h_begin = horizontal_indexes[0][0]
-    h_end = horizontal_indexes[0][-1]
-
-    return img[h_begin:h_end, v_begin:v_end]
+    return img[top:bottom,left:right]
 
 def split_left_and_right(cropped):
     h, w = cropped.shape[:2]
@@ -145,46 +157,12 @@ def get_articles_from_spread(spread):
 # TODO: p. 11 and p. 1225 are shorter irregular pages
 page_range = range(12, 1225)
 
-def crop_from_book2(img):
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    hsv_lower = np.array([15, 0, 230])
-    hsv_upper = np.array([20, 255, 255])
-    hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
-    hsv_mask = cv2.morphologyEx(hsv_mask, cv2.MORPH_OPEN, kernel, iterations=4)
-
-    x, y, w, h = cv2.boundingRect(hsv_mask)
-    img = img[y:y+h,x:x+w]
-    hsv = hsv[y:y+h,x:x+w]
-
-    hsv_lower = np.array([0, 0, 0])
-    hsv_upper = np.array([179, 80, 150])
-    hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
-
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
-    hsv_mask = cv2.dilate(hsv_mask, kernel, iterations = 4)
-    contours, hierarchy = cv2.findContours(image=hsv_mask, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
-
-    # For debug
-    # cv2.drawContours(img, contours, -1, (0, 255, 0), 3)
-    boxes = []
-    area_threshold = 0.1
-    for contour in contours:
-        cx, cy, cw, ch = cv2.boundingRect(contour)
-        if cw * ch > (w * h * area_threshold):
-            boxes.append([cx, cy, cx + cw, cy + ch])
-    boxes = np.asarray(boxes)
-    left, top = np.min(boxes, axis=0)[:2]
-    right, bottom = np.max(boxes, axis=0)[2:]
-
-    return img[top:bottom,left:right]
-
 for page_idx in page_range:
     src_filename = 'images/page-%03d.jpg' % page_idx
     dst_filename = 'cropped/crop-%03d.jpg' % page_idx
     src = cv2.imread(src_filename)
     try:
-        dst = crop_from_book2(src)
+        dst = crop_from_book(src)
     except Exception as e:
         print('error while processing', src_filename, e)
     cv2.imwrite(dst_filename, dst)
