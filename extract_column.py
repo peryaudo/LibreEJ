@@ -51,7 +51,7 @@ def crop_from_book(img):
 
 def split_left_and_right(cropped):
     h, w = cropped.shape[:2]
-    margin = int((w // 2)* 0.02)
+    margin = int(w / 2 * 0.01)
     left_page = cropped[:,:w//2 - margin]
     right_page = cropped[:,w//2 + margin:]
     return left_page, right_page
@@ -158,14 +158,16 @@ def get_articles_from_spread(spread):
 page_range = range(12, 1225)
 
 for page_idx in page_range:
-    src_filename = 'images/page-%03d.jpg' % page_idx
-    dst_filename = 'cropped/crop-%03d.jpg' % page_idx
-    src = cv2.imread(src_filename)
+    src = cv2.imread('images/page-%03d.jpg' % page_idx)
     try:
         dst = crop_from_book(src)
+        dst_left, dst_right = split_left_and_right(dst)
+        dst_left = deskew(dst_left)
+        dst_right = deskew(dst_right)
     except Exception as e:
         print('error while processing', src_filename, e)
-    cv2.imwrite(dst_filename, dst)
+    cv2.imwrite(('cropped/crop-%03d-left.jpg' % page_idx), dst_left)
+    cv2.imwrite(('cropped/crop-%03d-right.jpg' % page_idx), dst_right)
 
 # img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
