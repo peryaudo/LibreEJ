@@ -212,19 +212,23 @@ def test_page_split(page_idx):
     cv2.imwrite(('cropped/crop-%03d-right-1.jpg' % page_idx), dst_right_1)
     cv2.imwrite(('cropped/crop-%03d-right-2.jpg' % page_idx), dst_right_2)
 
-def test_article_split(page_idx):
+def test_article_split(page_idx, f):
     src = cv2.imread('images/page-%03d.jpg' % page_idx)
     for i, article in enumerate(get_articles_from_spread(src)):
-        filename = 'cropped/crop-%03d-%d.jpg' % (page_idx, i)
-        print(filename, recognize_heading(article))
-        cv2.imwrite(filename, article)
+        filename = 'crop-%03d-%d.jpg' % (page_idx, i)
+        heading = recognize_heading(article)
+        f.write('<tr><td><img src="%s"></td><td>%s</td></tr>' % (filename, heading))
+        f.flush()
+        cv2.imwrite('cropped/' + filename, article)
 
 
 # pool = multiprocessing.Pool()
 # pool.map(test_page_split, page_range)
-for page_idx in page_range:
+with open('cropped/index.html', 'w') as f:
+    f.write('<html><title>DictCV</title><body><table><tr><th>image</th><th>heading</th></tr>')
+    for page_idx in page_range:
     # test_page_split(page_idx)
-    test_article_split(page_idx)
+        test_article_split(page_idx, f)
 
 # img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
