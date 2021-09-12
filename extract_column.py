@@ -94,6 +94,18 @@ def crop_page_margin(page):
 
     return page[h_begin:h_end, v_begin:v_end]
 
+def crop_page_margin2(page):
+    hsv = cv2.cvtColor(page, cv2.COLOR_BGR2HSV)
+    hsv_lower = np.array([0, 0, 0])
+    hsv_upper = np.array([179, 80, 150])
+    hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    hsv_mask = cv2.dilate(hsv_mask, kernel, iterations = 4)
+
+    x, y, w, h = cv2.boundingRect(hsv_mask)
+
+    return page[y:y+h,x:x+w]
+
 def split_column(page):
     h, w = page.shape[:2]
     left_column = page[:,:w//2]
@@ -163,15 +175,17 @@ def test_page_split(page_idx):
     try:
         dst = crop_from_book(src)
         dst_left, dst_right = split_left_and_right(dst)
-        dst_left = deskew(dst_left)
-        dst_right = deskew(dst_right)
+        dst_left = crop_page_margin2(dst_left)
+        dst_right = crop_page_margin2(dst_right)
     except Exception as e:
-        print('error while processing', src_filename, e)
+        print('error while processing', page_idx, e)
     cv2.imwrite(('cropped/crop-%03d-left.jpg' % page_idx), dst_left)
     cv2.imwrite(('cropped/crop-%03d-right.jpg' % page_idx), dst_right)
 
-pool = multiprocessing.Pool()
-pool.map(test_page_split, page_range)
+# pool = multiprocessing.Pool()
+# pool.map(test_page_split, page_range)
+for page_idx in range(12, 50):
+    test_page_split(page_idx)
 
 # img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
