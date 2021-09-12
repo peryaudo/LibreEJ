@@ -100,7 +100,7 @@ def not_too_long(contour):
     x, y, w, h = cv2.boundingRect(contour)
     return w < 100 and h < 100
 
-def detect_article(original_column):
+def detect_article(column):
     ret, column = cv2.threshold(column, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     contours, hierarchy = cv2.findContours(image=column, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
 
