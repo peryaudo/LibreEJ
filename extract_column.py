@@ -215,12 +215,14 @@ def test_page_split(page_idx):
 def test_article_split(page_idx):
     src = cv2.imread('images/page-%03d.jpg' % page_idx)
     for i, article in enumerate(get_articles_from_spread(src)):
-        cv2.imwrite(('cropped/crop-%03d-%d.jpg' % (page_idx, i)), article)
+        filename = 'cropped/crop-%03d-%d.jpg' % (page_idx, i)
+        print(filename, recognize_heading(article))
+        cv2.imwrite(filename, article)
 
 
 # pool = multiprocessing.Pool()
 # pool.map(test_page_split, page_range)
-for page_idx in range(12, 50):
+for page_idx in page_range:
     # test_page_split(page_idx)
     test_article_split(page_idx)
 
