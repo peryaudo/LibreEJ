@@ -150,6 +150,9 @@ def crop_from_book2(img):
     hsv_lower = np.array([15, 0, 230])
     hsv_upper = np.array([20, 255, 255])
     hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    hsv_mask = cv2.morphologyEx(hsv_mask, cv2.MORPH_OPEN, kernel, iterations=4)
+
     x, y, w, h = cv2.boundingRect(hsv_mask)
     img = img[y:y+h,x:x+w]
     hsv = hsv[y:y+h,x:x+w]
@@ -162,8 +165,10 @@ def crop_from_book2(img):
     hsv_mask = cv2.dilate(hsv_mask, kernel, iterations = 4)
     contours, hierarchy = cv2.findContours(image=hsv_mask, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
 
+    # For debug
+    # cv2.drawContours(img, contours, -1, (0, 255, 0), 3)
     boxes = []
-    area_threshold = 0.2
+    area_threshold = 0.1
     for contour in contours:
         cx, cy, cw, ch = cv2.boundingRect(contour)
         if cw * ch > (w * h * area_threshold):
