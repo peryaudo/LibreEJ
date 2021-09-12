@@ -74,26 +74,6 @@ def deskew(original_page):
     return imutils.rotate(original_page, best_angle)
 
 def crop_page_margin(page):
-    gray = cv2.cvtColor(page, cv2.COLOR_BGR2GRAY)
-    ret, gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    h, w = gray.shape[:2]
-    gray = fill_from_corners(gray)
-    # TODO: vertical and horizontal are opposite
-    vertical = np.sum(gray, axis=0)//w > 0
-    horizontal = np.sum(gray, axis=1)//h > 40
-
-    vertical_indexes = np.where(vertical == True)
-    horizontal_indexes = np.where(horizontal == True)
-
-    v_begin = vertical_indexes[0][0]
-    v_end = vertical_indexes[0][-1] + int(h * 0.005)
-
-    h_begin = horizontal_indexes[0][0]
-    h_end = horizontal_indexes[0][-1] + int(h * 0.005)
-
-    return page[h_begin:h_end, v_begin:v_end]
-
-def crop_page_margin2(page):
     hsv = cv2.cvtColor(page, cv2.COLOR_BGR2HSV)
     hsv_lower = np.array([0, 0, 0])
     hsv_upper = np.array([179, 80, 150])
@@ -107,6 +87,7 @@ def crop_page_margin2(page):
 
 def split_column(page):
     h, w = page.shape[:2]
+    page = page[int(h * 0.035):,:]
     left_column = page[:,:w//2]
     right_column = page[:,w//2:]
     return left_column, right_column
@@ -120,8 +101,7 @@ def not_too_long(contour):
     return w < 100 and h < 100
 
 def detect_article(original_column):
-    column = cv2.cvtColor(original_column, cv2.COLOR_BGR2GRAY)
-    ret, column = cv2.threshold(column, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    ret, column = cv2.threshold(column, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     contours, hierarchy = cv2.findContours(image=column, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
 
     contours = filter(not_too_long, contours)
@@ -144,7 +124,7 @@ def cut_into_articles(column, ys):
     return articles
 
 def recognize_heading(article):
-    article = cv2.cvtColor(article, cv2.COLOR_BGR2GRAY)
+    article = cv2.bitwise_not(article)
     article = cv2.resize(article, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     data = pytesseract.image_to_data(article, lang="eng", output_type=pytesseract.Output.DICT)
     for text in data['text']:
@@ -157,7 +137,7 @@ def get_articles_from_spread(spread):
     left_page, right_page = split_left_and_right(cropped)
     result = []
     for page in [left_page, right_page]:
-        page = crop_page_margin(deskew(page))
+        page = deskew(to_grayscale(crop_page_margin(page)))
         left_column, right_column = split_column(page)
         for column in [left_column, right_column]:
             heading_ys = detect_article(column)
@@ -179,8 +159,8 @@ def test_page_split(page_idx):
     try:
         dst = crop_from_book(src)
         dst_left, dst_right = split_left_and_right(dst)
-        dst_left = crop_page_margin2(dst_left)
-        dst_right = crop_page_margin2(dst_right)
+        dst_left = crop_page_margin(dst_left)
+        dst_right = crop_page_margin(dst_right)
         dst_left = to_grayscale(dst_left)
         dst_right = to_grayscale(dst_right)
         dst_left = deskew(dst_left)
