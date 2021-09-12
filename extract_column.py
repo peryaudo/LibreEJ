@@ -3,6 +3,7 @@ import imutils
 import numpy as np
 import re
 from pytesseract import pytesseract
+import multiprocessing
 
 np.set_printoptions(threshold=np.inf)
 
@@ -157,7 +158,7 @@ def get_articles_from_spread(spread):
 # TODO: p. 11 and p. 1225 are shorter irregular pages
 page_range = range(12, 1225)
 
-for page_idx in page_range:
+def test_page_split(page_idx):
     src = cv2.imread('images/page-%03d.jpg' % page_idx)
     try:
         dst = crop_from_book(src)
@@ -168,6 +169,9 @@ for page_idx in page_range:
         print('error while processing', src_filename, e)
     cv2.imwrite(('cropped/crop-%03d-left.jpg' % page_idx), dst_left)
     cv2.imwrite(('cropped/crop-%03d-right.jpg' % page_idx), dst_right)
+
+pool = multiprocessing.Pool()
+pool.map(test_page_split, page_range)
 
 # img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
