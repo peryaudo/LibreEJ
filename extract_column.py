@@ -101,21 +101,10 @@ def not_too_long(contour):
     x, y, w, h = cv2.boundingRect(contour)
     return w < 100 and h < 100
 
-def detect_article(column):
-    ret, column = cv2.threshold(column, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    contours, hierarchy = cv2.findContours(image=column, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
-
-    contours = filter(not_too_long, contours)
-    contours = sorted(contours, key=leftmost_contour)
-    heading_x = cv2.boundingRect(contours[0])[0]
-    # TODO: Stop using heuristic heading tabbing threshold of 5
-    contours = filter(lambda contour: abs(cv2.boundingRect(contour)[0] - heading_x) < 5, contours)
-    # TODO: Stop subtracting 5 and use a smarter method
-    heading_ys = map(lambda contour: cv2.boundingRect(contour)[1] - 5, contours)
-    return list(sorted(list(set(heading_ys))))
-
 def cut_into_articles(column):
-    ys = detect_articles2(column)
+    ys = detect_articles(column)
+    if len(ys) < 2:
+        return [column]
     articles = []
     h, w = column.shape[:2]
     prev_y = ys[0]
@@ -137,7 +126,7 @@ def detect_lines(column):
     upper = [upper[i] for i in range(len(upper) - 1) if upper[i + 1] - upper[i] > m // 2]
     return lower, upper
 
-def detect_articles2(original_column):
+def detect_articles(original_column):
     lower, upper = detect_lines(original_column)
     ret, column = cv2.threshold(original_column, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     h, w = column.shape[:2]
@@ -148,9 +137,7 @@ def detect_articles2(original_column):
             break
         bx, by, bw, bh = cv2.boundingRect(column[upper_y:lower_y, :])
         bxs.append(bx)
-    print(bxs)
     th = (max(bxs) - min(bxs)) // 2
-    print(th)
     heading_ys = []
     for i in range(len(bxs)):
         if bxs[i] < th:
@@ -225,15 +212,22 @@ def test_page_split(page_idx):
     cv2.imwrite(('cropped/crop-%03d-right-1.jpg' % page_idx), dst_right_1)
     cv2.imwrite(('cropped/crop-%03d-right-2.jpg' % page_idx), dst_right_2)
 
+def test_article_split(page_idx):
+    src = cv2.imread('images/page-%03d.jpg' % page_idx)
+    for i, article in enumerate(get_articles_from_spread(src)):
+        cv2.imwrite(('cropped/crop-%03d-%d.jpg' % (page_idx, i)), article)
+
+
 # pool = multiprocessing.Pool()
 # pool.map(test_page_split, page_range)
-# for page_idx in range(12, 50):
-#     test_page_split(page_idx)
+for page_idx in range(12, 50):
+    # test_page_split(page_idx)
+    test_article_split(page_idx)
 
-img = cv2.imread("images/page-015.jpg")
+# img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
 
-for article in get_articles_from_spread(img):
-    print(recognize_heading(article))
-    cv2.imshow('image', article)
-    cv2.waitKey(0)
+# for article in get_articles_from_spread(img):
+#     print(recognize_heading(article))
+#     cv2.imshow('image', article)
+#     cv2.waitKey(0)
