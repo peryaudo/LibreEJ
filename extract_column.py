@@ -88,8 +88,9 @@ def crop_page_margin(page):
 def split_column(page):
     h, w = page.shape[:2]
     page = page[int(h * 0.035):,:]
-    left_column = page[:,:w//2]
-    right_column = page[:,w//2:]
+    margin = int(w / 2 * 0.015)
+    left_column = page[:,:w//2-margin]
+    right_column = page[:,w//2+margin:]
     return left_column, right_column
 
 def leftmost_contour(contour):
@@ -123,6 +124,28 @@ def cut_into_articles(column):
         articles.append(column[prev_y:y,:])
         prev_y = y
     return articles
+
+def detect_lines(column):
+    ret, column = cv2.threshold(column, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    h, w = column.shape[:2]
+    hist = np.sum(column, axis=1) // w > 2
+    lower = [y for y in range(h - 1) if hist[y] and not hist[y + 1]]
+    upper = [y for y in range(h - 1) if not hist[y] and hist[y + 1]]
+
+    m = np.diff(np.array(lower), n=1).mean()
+    lower = [lower[i] for i in range(len(lower) - 1) if lower[i + 1] - lower[i] > m // 2]
+    upper = [upper[i] for i in range(len(upper) - 1) if upper[i + 1] - upper[i] > m // 2]
+    return lower, upper
+
+def draw_lines(column):
+    lower, upper = detect_lines(column)
+    column = cv2.cvtColor(column, cv2.COLOR_GRAY2RGB)
+    h, w = column.shape[:2]
+    for y in lower:
+        cv2.line(column, (0, y), (w - 1, y), (0, 255, 0), 1)
+    for y in upper:
+        cv2.line(column, (0, y), (w - 1, y), (0, 0, 255), 1)
+    return column
 
 def recognize_heading(article):
     article = cv2.bitwise_not(article)
@@ -168,6 +191,11 @@ def test_page_split(page_idx):
 
         dst_left_1, dst_left_2 = split_column(dst_left)
         dst_right_1, dst_right_2 = split_column(dst_right)
+        dst_left_1 = draw_lines(dst_left_1)
+        dst_left_2 = draw_lines(dst_left_2)
+        dst_right_1 = draw_lines(dst_right_1)
+        dst_right_2 = draw_lines(dst_right_2)
+
     except Exception as e:
         print('error while processing', page_idx, e)
     cv2.imwrite(('cropped/crop-%03d-left-1.jpg' % page_idx), dst_left_1)
