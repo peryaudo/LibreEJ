@@ -1,0 +1,19 @@
+<!doctype HTML>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>Search Result for {{ q }}</title>
+	</head>
+	<body>
+		<h1>English-Japanese Dictionary</h1>
+		<h2>Search Result for {{ q }}</h2>
+		<form action="/search" method="GET">
+			<input type="text" name="q" value="{{ q }}">
+			<input type="submit" value="Search">
+		</form>
+		{% for article in result %}
+		<h3>{{ article.heading }}</h3>
+		<img src="/images/{{ article.image }}">
+		{% endfor %}
+	</body>
+</html>
