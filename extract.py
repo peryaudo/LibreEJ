@@ -165,7 +165,8 @@ def recognize_heading(article):
     data = pytesseract.image_to_data(article, lang="eng", output_type=pytesseract.Output.DICT)
     for text in data['text']:
         if len(text) > 0:
-            return text.split('[')[0]
+            original_heading = text.split('[')[0]
+            return ''.join(c for c in original_heading if c.isalpha())
     return None
 
 def get_articles_from_spread(spread):
