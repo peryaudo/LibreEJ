@@ -9,3 +9,7 @@
 ## Extraction
 
     python3 extract.py
+
+## Browse
+
+    python3 web.py
