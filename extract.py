@@ -4,6 +4,7 @@ import numpy as np
 import re
 from pytesseract import pytesseract
 import multiprocessing
+from itertools import chain
 
 np.set_printoptions(threshold=np.inf)
 
@@ -216,17 +217,22 @@ def test_page_split(page_idx):
 
 def test_article_split(page_idx):
     src = cv2.imread('images/page-%03d.jpg' % page_idx)
+    result = []
     for i, article in enumerate(get_articles_from_spread(src)):
         filename = 'crop-%03d-%d.jpg' % (page_idx, i)
         heading = recognize_heading(article)
         cv2.imwrite('cropped/' + filename, article)
+        result.append((filename, heading))
+    return result
 
 
-# pool = multiprocessing.Pool()
-# pool.map(test_page_split, page_range)
-for page_idx in page_range:
-    # test_page_split(page_idx)
-    test_article_split(page_idx)
+pool = multiprocessing.Pool(16)
+for (filename, heading) in chain.from_iterable(pool.imap(test_article_split, page_range)):
+    print(filename, heading)
+
+# for page_idx in page_range:
+#     # test_page_split(page_idx)
+#     test_article_split(page_idx)
 
 # img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
