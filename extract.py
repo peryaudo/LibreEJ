@@ -5,8 +5,13 @@ import re
 from pytesseract import pytesseract
 import multiprocessing
 from itertools import chain
+import csv
+import sys
+from tqdm import tqdm
+import os
 
 np.set_printoptions(threshold=np.inf)
+os.environ['OMP_THREAD_LIMIT'] = '1'
 
 def fill_from_corners(gray):
     h, w = gray.shape[:2]
@@ -216,24 +221,26 @@ def test_page_split(page_idx):
     cv2.imwrite(('cropped/crop-%03d-right-1.jpg' % page_idx), dst_right_1)
     cv2.imwrite(('cropped/crop-%03d-right-2.jpg' % page_idx), dst_right_2)
 
-def test_article_split(page_idx):
+def save_articles_from_spread(page_idx):
     src = cv2.imread('images/page-%03d.jpg' % page_idx)
     result = []
     for i, article in enumerate(get_articles_from_spread(src)):
         filename = 'crop-%03d-%d.jpg' % (page_idx, i)
         heading = recognize_heading(article)
-        cv2.imwrite('cropped/' + filename, article)
+        cv2.imwrite('result/' + filename, article)
         result.append((filename, heading))
     return result
 
+pool = multiprocessing.Pool()
 
-pool = multiprocessing.Pool(16)
-for (filename, heading) in chain.from_iterable(pool.imap(test_article_split, page_range)):
-    print(filename, heading)
+with open('result/index.csv', 'w') as f:
+    writer = csv.writer(f)
+    for (filename, heading) in chain.from_iterable(tqdm(pool.imap(save_articles_from_spread, page_range), total=len(page_range))):
+        writer.writerow([heading, filename])
+        f.flush()
 
 # for page_idx in page_range:
-#     # test_page_split(page_idx)
-#     test_article_split(page_idx)
+#     test_page_split(page_idx)
 
 # img = cv2.imread("images/page-015.jpg")
 # img = cv2.imread("jpegOutput.jpg")
