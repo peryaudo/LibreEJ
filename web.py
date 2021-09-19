@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, send_from_directory
 import csv
 from collections import namedtuple
+from itertools import islice
 
 Article = namedtuple('Article', ['heading', 'image'])
 
@@ -16,7 +17,7 @@ def index():
 @app.route('/search')
 def search():
     q = request.args.get('q')
-    result = filter(lambda article: q in article.heading, articles)
+    result = islice(filter(lambda article: q in article.heading, articles), 0, 25)
     return render_template('search.html', q=q, result=result)
 
 @app.route('/images/<path:path>')
