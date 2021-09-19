@@ -1,0 +1,12 @@
+[Unit]
+Description=Gunicorn instance for LibreEJ
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/LibreEJ
+ExecStart=gunicorn --workers 5 --bind unix:libreej.sock -m 007 web:app
+
+[Install]
+WantedBy=multi-user.target
