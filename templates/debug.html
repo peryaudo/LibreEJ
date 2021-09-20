@@ -20,14 +20,20 @@
 			<a href="/debug?spread={{ spread }}&tag=original">original</a> |
 			<a href="/debug?spread={{ spread }}&tag=spread">spread</a> |
 			<a href="/debug?spread={{ spread }}&tag=page">page</a> |
-			<a href="/debug?spread={{ spread }}&tag=column">column</a>
+			<a href="/debug?spread={{ spread }}&tag=column">column</a> |
+			<a href="/debug?spread={{ spread }}&tag=article">article</a>
 		</div>
 		<div>
 			<a href="/debug?spread={{ spread - 1}}&tag={{ tag }}" id="previous">previous</a> |
 			<a href="/debug?spread={{ spread + 1}}&tag={{ tag }}" id="next">next</a>
 		</div>
-		{% for debug_image in result %}
+		{% for debug_image in debug_result %}
 		<img src="/images/{{ debug_image.image }}">
 		{% endfor %}
+		<table>
+			{% for article in result %}
+			<tr><td><img src="/images/{{ article.image }}"></td><td>{{ article.heading }}</td></tr>
+			{% endfor %}
+		</table>
 	</body>
 </html>

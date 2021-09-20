@@ -28,8 +28,13 @@ def search():
 def debug():
     spread = request.args.get('spread')
     tag = request.args.get('tag')
-    result = filter(lambda debug_image: debug_image.spread_idx == spread and debug_image.tag == tag, debug_images)
-    return render_template('debug.html', spread=int(spread), tag=tag, result=result)
+    result = []
+    debug_result = []
+    if tag == 'article':
+        result = filter(lambda article: article.spread_idx == spread, articles)
+    else:
+        debug_result = filter(lambda debug_image: debug_image.spread_idx == spread and debug_image.tag == tag, debug_images)
+    return render_template('debug.html', spread=int(spread), tag=tag, debug_result=debug_result, result=result)
 
 @app.route('/images/<path:path>')
 def send_js(path):
