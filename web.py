@@ -28,7 +28,7 @@ def search():
 def debug():
     spread = request.args.get('spread')
     tag = request.args.get('tag')
-    result = filter(lambda debug_image: debug_image.spread == spread and debug_image.tag == tag, debug_images)
+    result = filter(lambda debug_image: debug_image.spread_idx == spread and debug_image.tag == tag, debug_images)
     return render_template('debug.html', spread=spread, tag=tag, result=result)
 
 @app.route('/images/<path:path>')
