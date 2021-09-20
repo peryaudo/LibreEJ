@@ -7,6 +7,7 @@ import multiprocessing
 import csv
 import sys
 from tqdm import tqdm
+import shutil
 import os
 from collections import namedtuple
 
@@ -223,6 +224,9 @@ def save_articles_from_spread(page_idx):
     return (result, debug_result)
 
 pool = multiprocessing.Pool()
+
+shutil.rmtree('result/')
+os.mkdir('result')
 
 with open('result/index.csv', 'w') as f:
     with open('result/debug.csv', 'w') as debug_f:
