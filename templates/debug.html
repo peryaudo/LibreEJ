@@ -1,0 +1,13 @@
+<!doctype HTML>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>Debug Information for spread #{{ spread }}({{ tag }})</title>
+	</head>
+	<body>
+		<h2>Debug Information for spread #{{ spread }}({{ tag }})</h2>
+		{% for debug_image in result %}
+		<img src="/images/{{ debug_image.image }}">
+		{% endfor %}
+	</body>
+</html>
