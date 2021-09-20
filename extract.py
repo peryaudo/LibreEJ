@@ -4,7 +4,6 @@ import numpy as np
 import re
 from pytesseract import pytesseract
 import multiprocessing
-from itertools import chain
 import csv
 import sys
 from tqdm import tqdm
@@ -12,6 +11,8 @@ import os
 
 np.set_printoptions(threshold=np.inf)
 os.environ['OMP_THREAD_LIMIT'] = '1'
+
+Article = namedtuple('Article', ['heading', 'image', 'spread_idx'])
 
 def fill_from_corners(gray):
     h, w = gray.shape[:2]
@@ -228,16 +229,17 @@ def save_articles_from_spread(page_idx):
         filename = 'crop-%03d-%d.jpg' % (page_idx, i)
         heading = recognize_heading(article)
         cv2.imwrite('result/' + filename, article)
-        result.append((filename, heading))
+        result.append(Article(heading=heading, image=filename, spread_idx=i))
     return result
 
 pool = multiprocessing.Pool()
 
 with open('result/index.csv', 'w') as f:
     writer = csv.writer(f)
-    for (filename, heading) in chain.from_iterable(tqdm(pool.imap(save_articles_from_spread, page_range), total=len(page_range))):
-        writer.writerow([heading, filename])
-        f.flush()
+    for articles in tqdm(pool.imap(save_articles_from_spread, page_range), total=len(page_range)):
+        for article in articles:
+            writer.writerow([article.heading, article.image, article.spread_idx])
+            f.flush()
 
 # for page_idx in page_range:
 #     test_page_split(page_idx)
