@@ -4,6 +4,7 @@ from collections import namedtuple
 from itertools import islice
 
 Article = namedtuple('Article', ['heading', 'image', 'spread_idx'])
+DebugImage = namedtuple('DebugImage', ['tag', 'image', 'spread_idx'])
 
 with open('result/index.csv', 'r') as f:
     articles = list(map(Article._make, csv.reader(f)))

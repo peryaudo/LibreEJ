@@ -8,11 +8,13 @@ import csv
 import sys
 from tqdm import tqdm
 import os
+from collections import namedtuple
 
 np.set_printoptions(threshold=np.inf)
 os.environ['OMP_THREAD_LIMIT'] = '1'
 
 Article = namedtuple('Article', ['heading', 'image', 'spread_idx'])
+DebugImage = namedtuple('DebugImage', ['tag', 'image', 'spread_idx'])
 
 def fill_from_corners(gray):
     h, w = gray.shape[:2]
@@ -176,17 +178,25 @@ def recognize_heading(article):
     return None
 
 def get_articles_from_spread(spread):
+    debug_result = []
+    debug_result.append(('original', spread.copy()))
+
     cropped = crop_from_book(spread)
+    debug_result.append(('spread', cropped.copy()))
+
     left_page, right_page = split_left_and_right(cropped)
+
     result = []
     for page in [left_page, right_page]:
         page = deskew(to_grayscale(crop_page_margin(page)))
+        debug_result.append(('page', page.copy()))
+
         left_column, right_column = split_column(page)
         for column in [left_column, right_column]:
-            articles = cut_into_articles(column)
-            for article in articles:
-                result.append(article)
-    return result
+            debug_result.append(('column', draw_lines(column)))
+
+            result.extend(cut_into_articles(column))
+    return (result, debug_result)
 
 def to_grayscale(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -225,21 +235,30 @@ def test_page_split(page_idx):
 def save_articles_from_spread(page_idx):
     src = cv2.imread('images/page-%03d.jpg' % page_idx)
     result = []
-    for i, article in enumerate(get_articles_from_spread(src)):
+    debug_result = []
+    articles, debug_images = get_articles_from_spread(src)
+    for i, article in enumerate(articles):
         filename = 'crop-%03d-%d.jpg' % (page_idx, i)
         heading = recognize_heading(article)
         cv2.imwrite('result/' + filename, article)
-        result.append(Article(heading=heading, image=filename, spread_idx=i))
-    return result
+        result.append(Article(heading=heading, image=filename, spread_idx=page_idx))
+    for i, (tag, image) in enumerate(debug_images):
+        filename = 'debug-%03d-%d-%s.jpg' % (page_idx, i, tag)
+        cv2.imwrite('result/' + filename, image)
+        debug_result.append(DebugImage(tag=tag, image=filename, spread_idx=page_idx))
+    return (result, debug_result)
 
 pool = multiprocessing.Pool()
 
 with open('result/index.csv', 'w') as f:
-    writer = csv.writer(f)
-    for articles in tqdm(pool.imap(save_articles_from_spread, page_range), total=len(page_range)):
-        for article in articles:
-            writer.writerow([article.heading, article.image, article.spread_idx])
-            f.flush()
+    with open('result/debug.csv', 'w') as debug_f:
+        writer = csv.writer(f)
+        debug_writer = csv.writer(debug_f)
+        for articles, debug_images in tqdm(pool.imap(save_articles_from_spread, page_range), total=len(page_range)):
+            for article in articles:
+                writer.writerow(article)
+            for debug_image in debug_images:
+                debug_writer.writerow(debug_image)
 
 # for page_idx in page_range:
 #     test_page_split(page_idx)
