@@ -3,9 +3,29 @@
 	<head>
 		<meta charset=utf-8>
 		<title>Debug Information for spread #{{ spread }} ({{ tag }})</title>
+		<script>
+			window.onkeydown = function(event) {
+				if (event.key === 'ArrowLeft') {
+					document.getElementById('previous').click();
+				} else if (event.key === 'ArrowRight') {
+					document.getElementById('next').click();
+				}
+			};
+		</script>
+
 	</head>
 	<body>
 		<h2>Debug Information for spread #{{ spread }} ({{ tag }})</h2>
+		<div>
+			<a href="/debug?spread={{ spread }}&tag=original">original</a> |
+			<a href="/debug?spread={{ spread }}&tag=spread">spread</a> |
+			<a href="/debug?spread={{ spread }}&tag=page">page</a> |
+			<a href="/debug?spread={{ spread }}&tag=column">column</a>
+		</div>
+		<div>
+			<a href="/debug?spread={{ spread - 1}}&tag={{ tag }}" id="previous">previous</a> |
+			<a href="/debug?spread={{ spread + 1}}&tag={{ tag }}" id="next">next</a>
+		</div>
 		{% for debug_image in result %}
 		<img src="/images/{{ debug_image.image }}">
 		{% endfor %}

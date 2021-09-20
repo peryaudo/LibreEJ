@@ -14,6 +14,7 @@
 		{% for article in result %}
 		<h3>{{ article.heading }}</h3>
 		<img src="/images/{{ article.image }}">
+		<a href="/debug?spread={{ article.spread_idx }}&tag=column">debug</a>
 		{% endfor %}
 	</body>
 </html>
