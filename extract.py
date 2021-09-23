@@ -9,6 +9,7 @@ import sys
 from tqdm import tqdm
 import shutil
 import os
+import argparse
 from csvtuples import Article, DebugImage
 
 np.set_printoptions(threshold=np.inf)
@@ -201,8 +202,16 @@ def to_grayscale(img):
     hsv = cv2.bitwise_not(hsv[...,2])
     return hsv
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--debug')
+args = parser.parse_args()
+
 # TODO: p. 11 and p. 1225 are shorter irregular pages
 page_range = range(12, 1225)
+result_dir = 'result'
+if args.debug:
+    page_range = range(int(args.debug), int(args.debug) + 1)
+    result_dir = 'debug'
 
 def save_articles_from_spread(page_idx):
     src = cv2.imread('images/page-%03d.jpg' % page_idx)
@@ -212,21 +221,24 @@ def save_articles_from_spread(page_idx):
     for i, article in enumerate(articles):
         filename = 'crop-%03d-%d.jpg' % (page_idx, i)
         heading = recognize_heading(article)
-        cv2.imwrite('result/' + filename, article)
+        cv2.imwrite(result_dir + '/' + filename, article)
         result.append(Article(heading=heading, image=filename, spread_idx=page_idx))
     for i, (tag, image) in enumerate(debug_images):
         filename = 'debug-%03d-%d-%s.jpg' % (page_idx, i, tag)
-        cv2.imwrite('result/' + filename, image)
+        cv2.imwrite(result_dir + '/' + filename, image)
         debug_result.append(DebugImage(tag=tag, image=filename, spread_idx=page_idx))
     return (result, debug_result)
 
-pool = multiprocessing.Pool()
+if args.debug:
+    pool = multiprocessing.Pool(1)
+else:
+    pool = multiprocessing.Pool()
 
-shutil.rmtree('result/')
-os.mkdir('result')
+shutil.rmtree(result_dir + '/', ignore_errors=True)
+os.mkdir(result_dir)
 
-with open('result/index.csv', 'w') as f:
-    with open('result/debug.csv', 'w') as debug_f:
+with open(result_dir + '/index.csv', 'w') as f:
+    with open(result_dir + '/debug.csv', 'w') as debug_f:
         writer = csv.writer(f)
         debug_writer = csv.writer(debug_f)
         for articles, debug_images in tqdm(pool.imap(save_articles_from_spread, page_range), total=len(page_range)):
