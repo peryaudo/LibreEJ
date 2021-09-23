@@ -88,10 +88,21 @@ def crop_page_margin(page):
     hsv_mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
     hsv_mask = cv2.dilate(hsv_mask, kernel, iterations = 4)
+    contours, hierarchy = cv2.findContours(image=hsv_mask, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
 
-    x, y, w, h = cv2.boundingRect(hsv_mask)
+    h, w = hsv_mask.shape[:2]
 
-    return page[y:y+h,x:x+w]
+    boxes = []
+    area_threshold = 0.1
+    for contour in contours:
+        cx, cy, cw, ch = cv2.boundingRect(contour)
+        if cw * ch > (w * h * area_threshold):
+            boxes.append([cx, cy, cx + cw, cy + ch])
+    boxes = np.asarray(boxes)
+    left, top = np.min(boxes, axis=0)[:2]
+    right, bottom = np.max(boxes, axis=0)[2:]
+
+    return page[top:bottom,left:right]
 
 def split_column(page):
     h, w = page.shape[:2]
