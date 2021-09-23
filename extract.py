@@ -104,19 +104,21 @@ def split_column(original_page):
     dbg = cv2.cvtColor(original_page, cv2.COLOR_GRAY2RGB)
     header_splitter = []
     column_splitter = []
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
-        if abs(x2 - x1) > abs(y2 - y1):
-            header_splitter.append(y1)
-            header_splitter.append(y2)
-        else:
-            column_splitter.append(x1)
-            column_splitter.append(x2)
+    if lines is not None:
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            if abs(x2 - x1) > abs(y2 - y1):
+                header_splitter.append(y1)
+                header_splitter.append(y2)
+            else:
+                column_splitter.append(x1)
+                column_splitter.append(x2)
 
     if len(header_splitter) == 0:
         header_y = int(h * 0.035)
     else:
         header_y = sum(header_splitter) // len(header_splitter)
+        header_y += int(h* 0.005)
     if len(column_splitter) == 0:
         column_x = w//2
     else:
@@ -131,12 +133,12 @@ def leftmost_contour(contour):
     x, y, w, h = cv2.boundingRect(contour)
     return x
 
-def not_too_long(contour):
+def not_too_large_or_too_small(contour):
     x, y, w, h = cv2.boundingRect(contour)
-    return w < 100 and h < 100
+    return w < 100 and h < 100 and w * h > 20
 
 def cut_into_articles(column):
-    ys, th = detect_articles(column)
+    ys, contours = detect_articles(column)
     if len(ys) < 2:
         return [column]
     articles = []
@@ -155,30 +157,43 @@ def detect_lines(column):
     lower = [y for y in range(h - 1) if hist[y] and not hist[y + 1]]
     upper = [y for y in range(h - 1) if not hist[y] and hist[y + 1]]
 
+    if len(lower) < 2:
+        return [], []
     m = np.diff(np.array(lower), n=1).mean()
     lower = [lower[i] for i in range(len(lower) - 1) if lower[i + 1] - lower[i] > m // 2]
     upper = [upper[i] for i in range(len(upper) - 1) if upper[i + 1] - upper[i] > m // 2]
     return lower, upper
 
+def remove_too_close_numbers(src):
+    src = sorted(src)
+    dst = []
+    for num in src:
+        if len(dst) == 0:
+            dst.append(num)
+        elif abs(num - dst[-1]) > 5:
+            dst.append(num)
+    return dst
+
 def detect_articles(original_column):
     lower, upper = detect_lines(original_column)
     ret, column = cv2.threshold(original_column, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    h, w = column.shape[:2]
-    bxs = []
-    for upper_y in upper:
-        lower_y = min(filter(lambda y: y > upper_y, lower), default=-1)
-        if lower_y < 0:
-            break
-        bx, by, bw, bh = cv2.boundingRect(column[upper_y:lower_y, :])
-        bxs.append(bx)
-    th = (max(bxs) - min(bxs)) // 2
+
+    contours, hierarchy = cv2.findContours(image=column, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
+
+    contours = filter(not_too_large_or_too_small, contours)
+    contours = sorted(contours, key=leftmost_contour)
+    heading_x = cv2.boundingRect(contours[0])[0]
+    # TODO: Stop using heuristic heading tabbing threshold of 10
+    contours = list(filter(lambda contour: abs(cv2.boundingRect(contour)[0] - heading_x) < 10, contours))
     heading_ys = []
-    for i in range(len(bxs)):
-        if bxs[i] < th:
-            upper_y = upper[i]
-            lower_y = max(filter(lambda y: y < upper_y, lower), default=upper_y)
-            heading_ys.append((lower_y + upper_y) // 2)
-    return heading_ys, th
+    for contour in contours:
+        contour_y = cv2.boundingRect(contour)[1]
+        upper_y = max(filter(lambda y: y <= contour_y, upper), default=contour_y)
+        lower_y = max(filter(lambda y: y <= upper_y, lower), default=upper_y)
+        heading_ys.append((lower_y + upper_y) // 2)
+
+    heading_ys = remove_too_close_numbers(heading_ys)
+    return heading_ys, contours
 
 def dewarp_column(column):
     h, w = column.shape[:2]
@@ -203,7 +218,7 @@ def dewarp_column(column):
 
 def draw_lines(column):
     lower, upper = detect_lines(column)
-    ys, th = detect_articles(column)
+    ys, contours = detect_articles(column)
     column = cv2.cvtColor(column, cv2.COLOR_GRAY2RGB)
     h, w = column.shape[:2]
     for y in lower:
@@ -212,7 +227,7 @@ def draw_lines(column):
         cv2.line(column, (0, y), (w - 1, y), (128, 128, 128), 1)
     for y in ys:
         cv2.line(column, (0, y), (w - 1, y), (0, 255, 0), 1)
-    cv2.line(column, (th, 0), (th, h - 1), (255, 0, 0), 1)
+    column = cv2.drawContours(column, contours, -1, (0,255,0), 1)
     return column
 
 def recognize_heading(article):
