@@ -2,11 +2,21 @@ from flask import Flask, render_template, request, send_from_directory
 import csv
 from itertools import islice
 from csvtuples import Article, DebugImage
+import argparse
 
-with open('result/index.csv', 'r') as f:
+parser = argparse.ArgumentParser()
+parser.add_argument('--debug', action='store_true')
+args = parser.parse_args()
+
+if args.debug:
+    result_dir = 'debug'
+else:
+    result_dir = 'result'
+
+with open(result_dir + '/index.csv', 'r') as f:
     articles = list(map(Article._make, csv.reader(f)))
 
-with open('result/debug.csv', 'r') as f:
+with open(result_dir + '/debug.csv', 'r') as f:
     debug_images = list(map(DebugImage._make, csv.reader(f)))
 
 app = Flask(__name__)
@@ -35,7 +45,7 @@ def debug():
 
 @app.route('/images/<path:path>')
 def send_js(path):
-        return send_from_directory('result', path)
+        return send_from_directory(result_dir, path)
 
 if __name__ == "__main__":
     app.run()
