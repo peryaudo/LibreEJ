@@ -154,6 +154,27 @@ def detect_articles(original_column):
             heading_ys.append((lower_y + upper_y) // 2)
     return heading_ys
 
+def dewarp_column(column):
+    h, w = column.shape[:2]
+
+    best = 0
+    result = column
+    for k in range(2):
+        for i in range(10):
+            for j in range(10):
+                if k == 0:
+                    src_pts = np.float32([[0, 0], [0, h], [w, i], [w, h - j]])
+                elif k == 1:
+                    src_pts = np.float32([[0, i], [0, h - j], [w, 0], [w, h]])
+                dst_pts = np.float32([[0, 0], [0, h], [w, 0], [w, h]])
+                m = cv2.getPerspectiveTransform(src_pts, dst_pts)
+                current = cv2.warpPerspective(column, m, (w, h))
+                lower, upper = detect_lines(current)
+                if len(lower) > best:
+                    best = len(lower)
+                    result = current
+    return result
+
 def draw_lines(column):
     lower, upper = detect_lines(column)
     column = cv2.cvtColor(column, cv2.COLOR_GRAY2RGB)
@@ -192,6 +213,7 @@ def get_articles_from_spread(spread):
 
         left_column, right_column = split_column(page)
         for column in [left_column, right_column]:
+            column = dewarp_column(column)
             debug_result.append(('column', draw_lines(column)))
 
             result.extend(cut_into_articles(column))
