@@ -160,19 +160,6 @@ def detect_lines(column):
     upper = [upper[i] for i in range(len(upper) - 1) if upper[i + 1] - upper[i] > m // 2]
     return lower, upper
 
-def find_best_threshold(xs):
-    if len(xs) < 2:
-        return xs[0]
-    xs = np.array(sorted(xs))
-    best = None
-    best_i = 1
-    for i in range(1, len(xs)):
-        current = np.sqrt(np.var(xs[:i]) + np.var(xs[i:]))
-        if best == None or current < best:
-            best = current
-            best_i = i
-    return (xs[best_i - 1] + xs[best_i]) // 2
-
 def detect_articles(original_column):
     lower, upper = detect_lines(original_column)
     ret, column = cv2.threshold(original_column, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -184,7 +171,7 @@ def detect_articles(original_column):
             break
         bx, by, bw, bh = cv2.boundingRect(column[upper_y:lower_y, :])
         bxs.append(bx)
-    th = find_best_threshold(bxs)
+    th = (max(bxs) - min(bxs)) // 2
     heading_ys = []
     for i in range(len(bxs)):
         if bxs[i] < th:
