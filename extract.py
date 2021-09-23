@@ -107,7 +107,7 @@ def leftmost_contour(contour):
 
 def not_too_large_or_too_small(contour):
     x, y, w, h = cv2.boundingRect(contour)
-    return w < 100 and h < 100 and w * h > 20
+    return w < 50 and h < 50 and w * h > 20
 
 def cut_into_articles(column):
     ys, contours = detect_articles(column)
