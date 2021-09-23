@@ -1,10 +1,7 @@
 from flask import Flask, render_template, request, send_from_directory
 import csv
-from collections import namedtuple
 from itertools import islice
-
-Article = namedtuple('Article', ['heading', 'image', 'spread_idx'])
-DebugImage = namedtuple('DebugImage', ['tag', 'image', 'spread_idx'])
+from csvtuples import Article, DebugImage
 
 with open('result/index.csv', 'r') as f:
     articles = list(map(Article._make, csv.reader(f)))

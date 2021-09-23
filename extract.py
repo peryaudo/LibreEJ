@@ -9,13 +9,10 @@ import sys
 from tqdm import tqdm
 import shutil
 import os
-from collections import namedtuple
+from csvtuples import Article, DebugImage
 
 np.set_printoptions(threshold=np.inf)
 os.environ['OMP_THREAD_LIMIT'] = '1'
-
-Article = namedtuple('Article', ['heading', 'image', 'spread_idx'])
-DebugImage = namedtuple('DebugImage', ['tag', 'image', 'spread_idx'])
 
 def fill_from_corners(gray):
     h, w = gray.shape[:2]
