@@ -110,7 +110,7 @@ def not_too_long(contour):
     return w < 100 and h < 100
 
 def cut_into_articles(column):
-    ys = detect_articles(column)
+    ys, th = detect_articles(column)
     if len(ys) < 2:
         return [column]
     articles = []
@@ -152,7 +152,7 @@ def detect_articles(original_column):
             upper_y = upper[i]
             lower_y = max(filter(lambda y: y < upper_y, lower), default=upper_y)
             heading_ys.append((lower_y + upper_y) // 2)
-    return heading_ys
+    return heading_ys, th
 
 def dewarp_column(column):
     h, w = column.shape[:2]
@@ -177,12 +177,16 @@ def dewarp_column(column):
 
 def draw_lines(column):
     lower, upper = detect_lines(column)
+    ys, th = detect_articles(column)
     column = cv2.cvtColor(column, cv2.COLOR_GRAY2RGB)
     h, w = column.shape[:2]
     for y in lower:
-        cv2.line(column, (0, y), (w - 1, y), (0, 255, 0), 1)
+        cv2.line(column, (0, y), (w - 1, y), (128, 128, 128), 1)
     for y in upper:
-        cv2.line(column, (0, y), (w - 1, y), (0, 0, 255), 1)
+        cv2.line(column, (0, y), (w - 1, y), (128, 128, 128), 1)
+    for y in ys:
+        cv2.line(column, (0, y), (w - 1, y), (0, 255, 0), 1)
+    cv2.line(column, (th, 0), (th, h - 1), (255, 0, 0), 1)
     return column
 
 def recognize_heading(article):
