@@ -204,6 +204,7 @@ def to_grayscale(img):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug')
+parser.add_argument('--disable_ocr', dest='enable_ocr', action='store_false')
 args = parser.parse_args()
 
 # TODO: p. 11 and p. 1225 are shorter irregular pages
@@ -220,7 +221,10 @@ def save_articles_from_spread(page_idx):
     articles, debug_images = get_articles_from_spread(src)
     for i, article in enumerate(articles):
         filename = 'crop-%03d-%d.jpg' % (page_idx, i)
-        heading = recognize_heading(article)
+        if args.enable_ocr:
+            heading = recognize_heading(article)
+        else:
+            heading = ''
         cv2.imwrite(result_dir + '/' + filename, article)
         result.append(Article(heading=heading, image=filename, spread_idx=page_idx))
     for i, (tag, image) in enumerate(debug_images):
