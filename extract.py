@@ -93,12 +93,38 @@ def crop_page_margin(page):
 
     return page[y:y+h,x:x+w]
 
-def split_column(page):
+def split_column(original_page):
+    page = cv2.Canny(original_page,50,150,apertureSize = 3)
     h, w = page.shape[:2]
-    page = page[int(h * 0.035):,:]
-    margin = int(w / 2 * 0.015)
-    left_column = page[:,:w//2-margin]
-    right_column = page[:,w//2+margin:]
+
+    minLineLength = int(w * 0.5)
+    maxLineGap = int(w * 0.1)
+
+    lines = cv2.HoughLinesP(page, 1, np.pi/180, 100, minLineLength, maxLineGap)
+    dbg = cv2.cvtColor(original_page, cv2.COLOR_GRAY2RGB)
+    header_splitter = []
+    column_splitter = []
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        if abs(x2 - x1) > abs(y2 - y1):
+            header_splitter.append(y1)
+            header_splitter.append(y2)
+        else:
+            column_splitter.append(x1)
+            column_splitter.append(x2)
+
+    if len(header_splitter) == 0:
+        header_y = int(h * 0.035)
+    else:
+        header_y = sum(header_splitter) // len(header_splitter)
+    if len(column_splitter) == 0:
+        column_x = w//2
+    else:
+        column_x = sum(column_splitter) // len(column_splitter)
+
+    margin = int(w * 0.01)
+    left_column = original_page[header_y:,:column_x-margin]
+    right_column = original_page[header_y:,column_x+margin:]
     return left_column, right_column
 
 def leftmost_contour(contour):
