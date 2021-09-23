@@ -118,7 +118,7 @@ def leftmost_contour(contour):
 
 def not_too_large_or_too_small(contour):
     x, y, w, h = cv2.boundingRect(contour)
-    return w < 50 and h < 50 and w * h > 20
+    return w < 50 and h < 50 and w * h > 20 and w > 5
 
 def cut_into_articles(column):
     ys, contours = detect_articles(column)
@@ -176,6 +176,9 @@ def detect_articles(original_column):
         heading_ys.append((lower_y + upper_y) // 2)
 
     heading_ys = remove_too_close_numbers(heading_ys)
+    if (len(heading_ys)/len(lower)) > 0.7:
+        # It might have failed to detect article headings.
+        return [], []
     return heading_ys, contours
 
 def dewarp_column(column):
@@ -300,3 +303,9 @@ with open(result_dir + '/index.csv', 'w') as f:
                 writer.writerow(article)
             for debug_image in debug_images:
                 debug_writer.writerow(debug_image)
+
+if args.debug:
+    print('Run')
+    print('    python3 web.py --debug')
+    print('and check')
+    print('    http://localhost:5000/debug?spread=%d&tag=column' % int(args.debug))
