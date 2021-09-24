@@ -132,7 +132,10 @@ def cut_into_articles(column):
     for y in ys[1:] + [h]:
         articles.append(column[prev_y:y,:])
         prev_y = y
-    return (column[:ys[0],:], articles)
+    prev = None
+    if ys[0] > 0:
+        prev = column[:ys[0],:]
+    return (prev, articles)
 
 def detect_lines(column):
     ret, column = cv2.threshold(column, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -239,6 +242,8 @@ def concatenate_articles(articles):
             continue
         rh, rw = result.shape[:2]
         h, w = article.shape[:2]
+        if h == 0:
+            continue
         if rw > w:
             article = cv2.copyMakeBorder(article, 0, 0, 0, rw - w, cv2.BORDER_CONSTANT, value=(0,0,0))
         elif rw < w:
@@ -271,7 +276,7 @@ def get_articles_from_spread(spread):
             if len(result) > 0:
                 result[-1] = concatenate_articles([result[-1], prev])
             else:
-                spread_prev = prev
+                spread_prev = concatenate_articles([spread_prev, prev])
             result.extend(articles)
     return (spread_prev, result, debug_result)
 
@@ -296,8 +301,11 @@ def save_articles_from_spread(page_idx):
     src = cv2.imread('images/page-%03d.jpg' % page_idx)
     result = []
     debug_result = []
-    # TODO: handle inter-spread concatenation of |prev|
     prev, articles, debug_images = get_articles_from_spread(src)
+    prev_filename = None
+    if prev is not None:
+        prev_filename = 'crop-%d03d-prev.jpg' % page_idx
+    cv2.imwrite(result_dir + '/' + prev_filename, prev)
     for i, article in enumerate(articles):
         filename = 'crop-%03d-%d.jpg' % (page_idx, i)
         if args.enable_ocr:
@@ -310,7 +318,7 @@ def save_articles_from_spread(page_idx):
         filename = 'debug-%03d-%d-%s.jpg' % (page_idx, i, tag)
         cv2.imwrite(result_dir + '/' + filename, image)
         debug_result.append(DebugImage(tag=tag, image=filename, spread_idx=page_idx))
-    return (result, debug_result)
+    return (prev_filename, result, debug_result)
 
 if args.debug:
     pool = multiprocessing.Pool(1)
@@ -324,8 +332,16 @@ with open(result_dir + '/index.csv', 'w') as f:
     with open(result_dir + '/debug.csv', 'w') as debug_f:
         writer = csv.writer(f)
         debug_writer = csv.writer(debug_f)
-        for articles, debug_images in tqdm(pool.imap(save_articles_from_spread, page_range), total=len(page_range)):
+        last_article = None
+        for prev, articles, debug_images in tqdm(pool.imap(save_articles_from_spread, page_range), total=len(page_range)):
+            if prev is not None and last_article is not None:
+                cv2.imwrite(
+                        result_dir + '/' + last_article.image,
+                        concatenate_articles([cv2.imread(result_dir + '/' + last_article.image), cv2.imread(result_dir + '/' + prev)]))
+                os.remove(result_dir + '/' + prev)
+
             for article in articles:
+                last_article = article
                 writer.writerow(article)
             for debug_image in debug_images:
                 debug_writer.writerow(debug_image)
