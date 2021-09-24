@@ -122,16 +122,17 @@ def not_too_large_or_too_small(contour):
 
 def cut_into_articles(column):
     ys, contours = detect_articles(column)
-    if len(ys) < 2:
-        return [column]
+    if len(ys) == 0:
+        return (column, [])
+    elif len(ys) == 1:
+        return (None, [column])
     articles = []
     h, w = column.shape[:2]
     prev_y = ys[0]
-    # TODO: Stop dropping ys[0] and concatenate it with an article in the previous column
     for y in ys[1:] + [h]:
         articles.append(column[prev_y:y,:])
         prev_y = y
-    return articles
+    return (column[:ys[0],:], articles)
 
 def detect_lines(column):
     ret, column = cv2.threshold(column, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -228,6 +229,24 @@ def recognize_heading(article):
             return ''.join(c for c in original_heading if c.isalpha())
     return None
 
+def concatenate_articles(articles):
+    result = None
+    for article in articles:
+        if result is None:
+            result = article
+            continue
+        if article is None:
+            continue
+        rh, rw = result.shape[:2]
+        h, w = article.shape[:2]
+        if rw > w:
+            article = cv2.copyMakeBorder(article, 0, 0, 0, rw - w, cv2.BORDER_CONSTANT, value=(0,0,0))
+        elif rw < w:
+            result = cv2.copyMakeBorder(result, 0, 0, 0, w - rw, cv2.BORDER_CONSTANT, value=(0,0,0))
+        result = np.vstack([result, article])
+    return result
+
+
 def get_articles_from_spread(spread):
     debug_result = []
     debug_result.append(('original', spread.copy()))
@@ -237,6 +256,7 @@ def get_articles_from_spread(spread):
 
     left_page, right_page = split_left_and_right(cropped)
 
+    spread_prev = None
     result = []
     for page in [left_page, right_page]:
         page = deskew(to_grayscale(crop_page_margin(page)))
@@ -247,8 +267,13 @@ def get_articles_from_spread(spread):
             column = dewarp_column(column)
             debug_result.append(('column', draw_lines(column)))
 
-            result.extend(cut_into_articles(column))
-    return (result, debug_result)
+            prev, articles = cut_into_articles(column)
+            if len(result) > 0:
+                result[-1] = concatenate_articles([result[-1], prev])
+            else:
+                spread_prev = prev
+            result.extend(articles)
+    return (spread_prev, result, debug_result)
 
 def to_grayscale(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -271,7 +296,8 @@ def save_articles_from_spread(page_idx):
     src = cv2.imread('images/page-%03d.jpg' % page_idx)
     result = []
     debug_result = []
-    articles, debug_images = get_articles_from_spread(src)
+    # TODO: handle inter-spread concatenation of |prev|
+    prev, articles, debug_images = get_articles_from_spread(src)
     for i, article in enumerate(articles):
         filename = 'crop-%03d-%d.jpg' % (page_idx, i)
         if args.enable_ocr:
