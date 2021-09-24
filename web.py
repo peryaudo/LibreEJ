@@ -43,6 +43,16 @@ def debug():
         debug_result = filter(lambda debug_image: debug_image.spread_idx == spread and debug_image.tag == tag, debug_images)
     return render_template('debug.html', spread=int(spread), tag=tag, debug_result=debug_result, result=result)
 
+@app.route('/bad')
+def bad():
+    result = []
+    for i in range(len(articles) - 1):
+        a = articles[i].heading.lower()
+        b = articles[i + 1].heading.lower()
+        if not (a < b):
+            result.append(articles[i])
+    return render_template('bad.html', total=len(result), result=result[:200])
+
 @app.route('/images/<path:path>')
 def send_js(path):
         return send_from_directory(result_dir, path)

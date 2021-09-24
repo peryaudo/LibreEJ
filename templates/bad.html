@@ -1,0 +1,15 @@
+<!doctype HTML>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>Bad OCR</title>
+	</head>
+	<body>
+		<h2>Showing 200 out of {{ total }} bad OCR entries</h2>
+		<table>
+		{% for article in result %}
+		<tr><td><img src="/images/{{ article.image }}"></td><td>{{ article.heading }}</td></tr>
+		{% endfor %}
+		</table>
+	</body>
+</html>
