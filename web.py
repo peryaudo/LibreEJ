@@ -2,16 +2,16 @@ from flask import Flask, render_template, request, send_from_directory
 import csv
 from itertools import islice
 from csvtuples import Article, DebugImage
-import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--debug', action='store_true')
-args = parser.parse_args()
+result_dir = 'result'
 
-if args.debug:
-    result_dir = 'debug'
-else:
-    result_dir = 'result'
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', action='store_true')
+    args = parser.parse_args()
+    if args.debug:
+        result_dir = 'debug'
 
 with open(result_dir + '/index.csv', 'r') as f:
     articles = list(map(Article._make, csv.reader(f)))
