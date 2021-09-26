@@ -305,7 +305,7 @@ def save_articles_from_spread(page_idx):
     prev_filename = None
     if prev is not None:
         prev_filename = 'crop-%d03d-prev.jpg' % page_idx
-    cv2.imwrite(result_dir + '/' + prev_filename, prev)
+        cv2.imwrite(result_dir + '/' + prev_filename, prev)
     for i, article in enumerate(articles):
         filename = 'crop-%03d-%d.jpg' % (page_idx, i)
         if args.enable_ocr:
