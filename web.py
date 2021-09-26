@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, send_from_directory
 import csv
 from itertools import islice
 from csvtuples import Article, ArticleBody, DebugImage
+import collections
 
 result_dir = 'result'
 
@@ -56,6 +57,9 @@ def bad():
     mode = request.args.get('mode')
     if mode == 'empty':
         result = list(filter(lambda article: article.heading == '', articles))
+    elif mode == 'duplicate':
+        counter = collections.Counter([article.heading for article in articles])
+        result = list(sorted(filter(lambda article: counter[article.heading] > 1 and article.heading != '', articles), key=lambda article: -counter[article.heading]))
     else:
         result = []
         for i in range(len(articles) - 1):
