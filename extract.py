@@ -325,8 +325,16 @@ if args.debug:
 else:
     pool = multiprocessing.Pool()
 
+try:
+    shutil.move(result_dir + '/body.csv', '.')
+except:
+    pass
 shutil.rmtree(result_dir + '/', ignore_errors=True)
 os.mkdir(result_dir)
+try:
+    shutil.move('body.csv', result_dir + '/')
+except:
+    pass
 
 with open(result_dir + '/index.csv', 'w') as f:
     with open(result_dir + '/debug.csv', 'w') as debug_f:
