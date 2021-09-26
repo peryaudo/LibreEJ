@@ -16,8 +16,11 @@ if __name__ == "__main__":
 with open(result_dir + '/index.csv', 'r') as f:
     articles = list(map(Article._make, csv.reader(f)))
 
-with open(result_dir + '/body.csv', 'r') as f:
-    bodies = list(map(ArticleBody._make, csv.reader(f)))
+try:
+    with open(result_dir + '/body.csv', 'r') as f:
+        bodies = list(map(ArticleBody._make, csv.reader(f)))
+except:
+    bodies = [ArticleBody(heading="", spread_idx=-1, body="")] * len(articles)
 
 with open(result_dir + '/debug.csv', 'r') as f:
     debug_images = list(map(DebugImage._make, csv.reader(f)))
