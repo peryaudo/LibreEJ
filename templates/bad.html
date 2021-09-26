@@ -8,7 +8,12 @@
 		<h2>Showing 200 out of {{ total }} bad OCR entries</h2>
 		<table>
 		{% for article in result %}
-		<tr><td><img src="/images/{{ article.image }}"></td><td>{{ article.heading }}</td></tr>
+		<tr>
+			<td><img src="/images/{{ article.image }}"></td>
+			<td>{{ article.heading }}</td>
+			<td><a href="/debug?spread={{ article.spread_idx }}&tag=column">debug</a></td>
+			<td>{{ article.spread_idx }}</td>
+		</tr>
 		{% endfor %}
 		</table>
 	</body>
