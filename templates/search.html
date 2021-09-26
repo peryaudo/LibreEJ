@@ -12,10 +12,13 @@
 			<input type="text" name="q" value="{{ q }}">
 			<input type="submit" value="Search">
 		</form>
-		{% for article in result %}
+		{% for article, body in result %}
 		<h3>{{ article.heading }}</h3>
+		<div>
 		<img src="/images/{{ article.image }}">
 		<a href="/debug?spread={{ article.spread_idx }}&tag=column">debug</a>
+		</div>
+		<div>{{ body.body }}</div>
 		{% endfor %}
 	</body>
 </html>

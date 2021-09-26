@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, send_from_directory
 import csv
 from itertools import islice
-from csvtuples import Article, DebugImage
+from csvtuples import Article, ArticleBody, DebugImage
 
 result_dir = 'result'
 
@@ -16,6 +16,9 @@ if __name__ == "__main__":
 with open(result_dir + '/index.csv', 'r') as f:
     articles = list(map(Article._make, csv.reader(f)))
 
+with open(result_dir + '/body.csv', 'r') as f:
+    bodies = list(map(ArticleBody._make, csv.reader(f)))
+
 with open(result_dir + '/debug.csv', 'r') as f:
     debug_images = list(map(DebugImage._make, csv.reader(f)))
 
@@ -28,8 +31,8 @@ def index():
 @app.route('/search')
 def search():
     q = request.args.get('q').strip().lower()
-    result = filter(lambda article: q in article.heading.lower(), articles)
-    result = sorted(result, key=lambda article: article.heading.lower().find(q))
+    result = filter(lambda article: q in article[0].heading.lower(), zip(articles, bodies))
+    result = sorted(result, key=lambda article: article[0].heading.lower().find(q))
     result = islice(result, 0, 25)
     return render_template('search.html', q=q, result=result)
 
