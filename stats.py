@@ -30,6 +30,11 @@ counter = collections.Counter(bad_spreads)
 for spread_idx, count in counter.most_common(10):
     print("  %s: %d entries" % (spread_idx, count))
 
+print('\nTop 10 duplicate headings:')
+counter = collections.Counter([article.heading for article in articles])
+for heading, count in counter.most_common(10):
+    print("  %s: %d entries" % (heading, count))
+
 print('\nBeginning of each alphabet:')
 found = set()
 print("  a starts at 11")
