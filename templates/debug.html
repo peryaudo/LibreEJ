@@ -31,8 +31,8 @@
 		<img src="/images/{{ debug_image.image }}">
 		{% endfor %}
 		<table>
-			{% for article in result %}
-			<tr><td><img src="/images/{{ article.image }}"></td><td>{{ article.heading }}</td></tr>
+			{% for article, body in result %}
+			<tr><td><img src="/images/{{ article.image }}"></td><td>{{ article.heading }}</td><td>{{ body.body }}</td></tr>
 			{% endfor %}
 		</table>
 	</body>
