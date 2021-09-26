@@ -28,7 +28,9 @@ def index():
 @app.route('/search')
 def search():
     q = request.args.get('q').strip().lower()
-    result = islice(filter(lambda article: q in article.heading.lower(), articles), 0, 25)
+    result = filter(lambda article: q in article.heading.lower(), articles)
+    result = sorted(result, key=lambda article: article.heading.lower().find(q))
+    result = islice(result, 0, 25)
     return render_template('search.html', q=q, result=result)
 
 @app.route('/debug')
