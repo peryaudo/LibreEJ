@@ -147,8 +147,8 @@ def detect_lines(column):
     if len(lower) < 2:
         return [], []
     m = np.diff(np.array(lower), n=1).mean()
-    lower = [lower[i] for i in range(len(lower) - 1) if lower[i + 1] - lower[i] > m // 2]
-    upper = [upper[i] for i in range(len(upper) - 1) if upper[i + 1] - upper[i] > m // 2]
+    lower = [lower[i] for i in range(len(lower)) if i + 1 >= len(lower) or lower[i + 1] - lower[i] > m // 2]
+    upper = [upper[i] for i in range(len(upper)) if i + 1 >= len(upper) or upper[i + 1] - upper[i] > m // 2]
     return lower, upper
 
 def remove_too_close_numbers(src):
