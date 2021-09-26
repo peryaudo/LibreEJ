@@ -30,5 +30,19 @@ counter = collections.Counter(bad_spreads)
 for spread_idx, count in counter.most_common(10):
     print("  %s: %d entries" % (spread_idx, count))
 
+print('\nBeginning of each alphabet:')
+found = set()
+print("  a starts at 11")
+for spread_idx in range(13, 1224):
+    before = collections.Counter([article.heading[:1].lower() for article in articles if article.spread_idx == str(spread_idx - 1)])
+    current = collections.Counter([article.heading[:1].lower() for article in articles if article.spread_idx == str(spread_idx)])
+    after = collections.Counter([article.heading[:1].lower() for article in articles if article.spread_idx == str(spread_idx + 1)])
+    before_char = before.most_common()[0][0]
+    after_char = after.most_common()[0][0]
+    if ord(before_char) + 1 == ord(after_char) and current[after_char] > 0 and after_char not in found:
+        print("  %s starts at %d" % (after_char, spread_idx))
+        found.add(after_char)
+print("  z starts at 1224")
+
 # TODO: The number of entries with a heading that the spell checker says is wrong
 # TODO: The number of cropped columns that have an unusual number of lines
