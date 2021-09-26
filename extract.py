@@ -227,7 +227,7 @@ def recognize_heading(article):
     article = cv2.resize(article, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     data = pytesseract.image_to_data(article, lang="eng", output_type=pytesseract.Output.DICT)
     for text in data['text']:
-        if len(text) > 0:
+        if len([c for c in text if c.isalpha()]) > 0:
             original_heading = text.split('[')[0]
             return ''.join(c for c in original_heading if c.isalpha())
     return None
